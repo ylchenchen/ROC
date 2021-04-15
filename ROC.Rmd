@@ -1,0 +1,70 @@
+---
+title: "ROC"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::downcute:
+    self_contained: true
+---
+
+## 一、import data
+
+ * 输入矩阵：out
+
+```{r,collapse=TRUE}
+# import data
+rm(list = ls())
+options(stringsAsFactors = F)
+load('../data/ROC_example.rdata')
+outTab[1:4,1:4]
+
+# turn to numeric
+str(outTab)
+out <- as.data.frame(apply(outTab,2,as.numeric))
+rownames(out) <- rownames(outTab)
+
+# group
+out$outcome <- paste0(c(rep('EXP',20),rep('CON',20)))
+table(out$outcome)
+```
+## 二、pROC
+
+```{r,collapse=TRUE}
+library("pROC")
+# plot
+hubgenes=colnames(out)
+hubgenes
+# res determine dpi
+jpeg("../pic/10_DMP_roc.jpg",units="in", width=16, height=6.5,res=650)
+par(mfrow=c(2,5))
+ro <- list()
+i=1
+for(i in 1:10){
+  x_color=c('#9e0142','#d53e4f','#f46d43','#fdae61','#fee08b',
+            '#e6f598','#abdda4','#66c2a5','#3288bd','#5e4fa2')
+  plot.roc(out$outcome,out[,i],main=hubgenes[i],print.thres=TRUE,
+           col=x_color[i],print.auc=TRUE,percent=TRUE,cex.lab=1.5,print.auc.cex=1.5)
+}
+dev.off()
+
+```
+
+## 三、ROC_data
+
+ * auc(95%CI)，threshold，specificity，sensitivity，npv，ppv，youden 
+ * 可修改函数选择
+ * https://www.rpubs.com/chixinzero/523998
+ * https://www.jianshu.com/p/7919ef304b19
+
+```{r,collapse=TRUE}
+# ROC_data
+source('ROCStatFunc.R')
+#ROCStatFunc(dat = out,group = 'outcome',var = 'cg12313947')
+hubgenes=c("cg12313947","cg18770216","cg26125082" ,"cg11136343",
+           "cg25463779","cg03873281","cg12589188", 
+           "cg22445217" ,"cg13568171", "cg14804593")
+rocRes <- lapply(hubgenes, function(x) ROCStatFunc(out, "outcome", x))
+rocResDat <- do.call(rbind, rocRes)
+rocResDat
+#write.table(rocResDat,file = '../data/10_DMP_ROC.txt',row.names = hubgenes)
+```
+
